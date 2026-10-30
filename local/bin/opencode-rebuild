@@ -28,7 +28,7 @@ fast_forward() {
 fast_forward local-setup
 features=$(git show local-setup:local/features)
 for feature in $features; do
-  fast_forward "$feature"
+  [ "$feature" = local-setup ] || fast_forward "$feature"
 done
 base=$(git describe --tags --abbrev=0 --first-parent --match 'v[0-9]*' HEAD)
 if [ "$base" != "$target" ]; then

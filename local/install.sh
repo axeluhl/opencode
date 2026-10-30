@@ -35,7 +35,7 @@ git remote get-url fork >/dev/null 2>&1 || git remote add fork "$fork"
 git config remote.fork.tagOpt --no-tags
 git fetch fork "+refs/heads/local-setup:refs/remotes/fork/local-setup"
 git config --unset-all remote.fork.fetch || true
-for branch in local-setup $(git show fork/local-setup:local/features); do
+for branch in $(git show fork/local-setup:local/features); do
   git config --add remote.fork.fetch "+refs/heads/$branch:refs/remotes/fork/$branch"
 done
 git fetch fork
