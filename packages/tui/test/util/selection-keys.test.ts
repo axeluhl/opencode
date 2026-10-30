@@ -2,6 +2,7 @@ import { expect, test } from "bun:test"
 import { EmbeddedTerminalRenderable, InputRenderable, TextareaRenderable, TextRenderable } from "@opentui/core"
 import { createTestRenderer, ManualClock } from "@opentui/core/testing"
 import type { ClipboardService } from "../../src/context/clipboard"
+import { createPointerSelection } from "../../src/component/prompt/pointer-selection"
 import { Selection } from "../../src/util/selection"
 
 async function setup(copyOnSelect = false) {
@@ -145,6 +146,31 @@ test.each(["manual", "select"].flatMap((mode) => ["textarea", "input"].map((kind
     }
   },
 )
+
+test("pointer selections in an editor are copied but not edited", async () => {
+  const app = await setup(true)
+  const editor = new TextareaRenderable(app.renderer, { width: 24, height: 3, initialValue: "alpha beta" })
+  const pointer = createPointerSelection(editor, { clock: app.clock, enabled: () => true, onClick: () => {} })
+  Object.assign(editor, { hasPointerSelection: pointer.selected })
+  app.renderer.root.add(editor)
+  editor.focus()
+  try {
+    await app.renderOnce()
+    editor.cursorOffset = 5
+    await app.mockMouse.drag(6, 0, 9, 0)
+    expect(app.renderer.getSelection()?.getSelectedText()).toBe("beta")
+
+    app.mockInput.pressCtrlC()
+    expect(app.writes).toEqual(["beta"])
+    expect(app.renderer.getSelection()?.getSelectedText()).toBe("beta")
+
+    app.mockInput.pressKey("x")
+    expect(editor.plainText).toBe("alphax beta")
+    expect(app.renderer.hasSelection).toBeFalse()
+  } finally {
+    app.renderer.destroy()
+  }
+})
 
 test("copy-on-select does not treat output selection as editor selection when an editor is focused", async () => {
   const app = await setup(true)
