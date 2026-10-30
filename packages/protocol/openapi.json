@@ -12743,9 +12743,16 @@
             "name": "sessionID",
             "in": "query",
             "schema": {
-              "$ref": "#/components/schemas/Session.ID"
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/Session.ID"
+                },
+                {
+                  "type": "null"
+                }
+              ]
             },
-            "required": true
+            "required": false
           }
         ],
         "security": [],
