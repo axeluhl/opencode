@@ -1,0 +1,53 @@
+#!/bin/sh
+# Rebuilds the binary that ~/.local/bin/opencode runs from the local-build branch of /usr/local/src/opencode: the
+# release tag of the installed official version, so both share one database schema, with the branches listed in
+# local/features of the local-setup branch merged in. After an official upgrade, local-build is recreated from the new
+# tag. Feature branches with new commits, also ones pushed to the fork from another machine, are merged again. Pass a
+# tag such as v2.2.4 to choose another release. Running instances keep working; they pick up the new build on their
+# next start.
+set -e
+repo=/usr/local/src/opencode
+export PATH="$HOME/.bun/bin:$PATH"
+target=${1:-$("$HOME/.opencode/bin/opencode" --version | sed 's/^opencode //')}
+cd "$repo"
+if [ "$(git branch --show-current)" != local-build ] || [ -n "$(git status --porcelain)" ]; then
+  echo "Expected a clean checkout of local-build in $repo." >&2
+  exit 1
+fi
+# Take over commits pushed from another machine, starting with local-setup, which lists the feature branches. The
+# fork carries copies of all upstream branches, so fetch only ours.
+fast_forward() {
+  git fetch -q --no-tags fork "+refs/heads/$1:refs/remotes/fork/$1" ||
+    echo "Could not fetch $1 from the fork; using the local branch." >&2
+  if ! git rev-parse -q --verify "refs/heads/$1" >/dev/null; then
+    git branch --track "$1" "fork/$1"
+  elif git merge-base --is-ancestor "$1" "fork/$1" 2>/dev/null; then
+    git branch -f "$1" "fork/$1"
+  fi
+}
+fast_forward local-setup
+features=$(git show local-setup:local/features)
+for feature in $features; do
+  fast_forward "$feature"
+done
+base=$(git describe --tags --abbrev=0 --first-parent --match 'v[0-9]*' HEAD)
+if [ "$base" != "$target" ]; then
+  git fetch origin "refs/tags/$target:refs/tags/$target"
+  echo "Recreating local-build from $target (was $base)"
+  git reset --hard "$target"
+fi
+for feature in $features; do
+  if ! git merge-base --is-ancestor "$feature" HEAD; then
+    git merge --no-ff --no-edit "$feature" || {
+      echo "Merging $feature conflicts. Resolve it, run 'git commit', then run opencode-rebuild again." >&2
+      exit 1
+    }
+  fi
+done
+bun install
+cd packages/cli
+rm -rf dist-local.next dist-local.old
+bun run build --single --skip-install --skip-web-ui --outdir=dist-local.next
+[ -d dist-local ] && mv dist-local dist-local.old
+mv dist-local.next dist-local
+dist-local/cli-linux-x64/bin/opencode --version

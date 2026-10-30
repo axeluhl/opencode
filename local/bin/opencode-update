@@ -1,0 +1,27 @@
+#!/bin/sh
+# Run daily by ~/.config/systemd/user/opencode-update.timer. Updates the official opencode in ~/.opencode/bin and
+# restarts the shared background service when its version changed. Rebuilds the local build whenever it is not based
+# on the installed release. Does nothing when everything is current.
+official="$HOME/.opencode/bin/opencode"
+repo=/usr/local/src/opencode
+notify() {
+  echo "$1"
+  notify-send --app-name=opencode "opencode update" "$1" 2>/dev/null || true
+}
+before=$("$official" --version)
+if ! "$official" upgrade; then
+  notify "Checking for or installing an official update failed. See: journalctl --user -u opencode-update"
+  exit 1
+fi
+after=$("$official" --version)
+if [ "$before" != "$after" ] && ! "$official" service restart; then
+  notify "Updated to $after, but restarting the background service failed."
+fi
+base=$(git -C "$repo" describe --tags --abbrev=0 --first-parent --match 'v[0-9]*' local-build)
+[ "opencode $base" = "$after" ] && exit 0
+if "$HOME/.local/bin/opencode-rebuild"; then
+  notify "Official version is $after; local build rebuilt on it."
+else
+  notify "Official version is $after, but rebuilding the local build stopped. Run opencode-rebuild in a terminal."
+  exit 1
+fi
