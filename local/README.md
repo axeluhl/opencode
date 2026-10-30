@@ -15,8 +15,8 @@ Run `local/install.sh` again after changing anything in `local/` on this branch,
 
 - `origin` is anomalyco/opencode, `fork` is axeluhl/opencode.
 - Feature branches, listed in `local/features`, start from the `dev` commit of a release, so they can become PRs
-  against `dev` and merge into a release without unreleased `dev` changes. `prompt-pointer-selection` merges the
-  original commits of PR #32370.
+  against `dev` and merge into a release without unreleased `dev` changes. `middle-click-paste` merges the original
+  commits of PR #32370; `prompt-pointer-selection` builds on `middle-click-paste`.
 - `local-build` is the release tag of the installed official version with all feature branches merged in. It is
   recreated on each release and never pushed.
 - The official opencode stays in `~/.opencode/bin` and owns the shared background service. Both versions share
