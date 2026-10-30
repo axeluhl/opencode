@@ -36,7 +36,7 @@ export const ScheduleEndpoints = [
     ),
   ),
   HttpApiEndpoint.get("schedule.list", "/api/experimental/schedule", {
-    query: { sessionID: Session.ID },
+    query: { sessionID: Schema.optional(Session.ID) },
     success: Schema.Struct({ data: Schema.Array(Schedule.Info) }),
     error: [SessionNotFoundError, ForbiddenError],
   }).annotateMerge(annotations("list", "List schedules", "List a Session's schedules, oldest first.")),

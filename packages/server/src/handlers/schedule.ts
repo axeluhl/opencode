@@ -43,11 +43,31 @@ export const makeSchedule = Effect.gen(function* () {
           "Session.NotFoundError": (error) => Effect.fail(missingSession(error)),
         }),
       ),
-    list: (sessionID: Session.ID) =>
-      allowed(sessionID).pipe(
-        Effect.andThen(schedules.list({ sessionID })),
-        Effect.map((data) => ({ data })),
-      ),
+    list: (sessionID: Session.ID | undefined) =>
+      sessionID !== undefined
+        ? allowed(sessionID).pipe(
+            Effect.andThen(schedules.list({ sessionID })),
+            Effect.map((data) => ({ data })),
+          )
+        : schedules.list().pipe(
+            Effect.flatMap((rows) => {
+              const cache = new Map<Session.ID, boolean>()
+              return Effect.filter(rows, (row) => {
+                const sid = row.sessionID
+                if (sid === undefined) return Effect.succeed(false)
+                const cached = cache.get(sid)
+                if (cached !== undefined) return Effect.succeed(cached)
+                return schedules.enabled(sid).pipe(
+                  Effect.tap((on) => Effect.sync(() => cache.set(sid, on))),
+                  Effect.orElseSucceed(() => {
+                    cache.set(sid, false)
+                    return false
+                  }),
+                )
+              })
+            }),
+            Effect.map((data) => ({ data })),
+          ),
     get: (id: Schedule.ID) => find(id).pipe(Effect.map((data) => ({ data }))),
     pause: (id: Schedule.ID) =>
       find(id).pipe(
