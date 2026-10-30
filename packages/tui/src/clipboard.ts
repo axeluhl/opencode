@@ -3,6 +3,7 @@ import {
   createHostClipboard,
   createRendererClipboardAdapter,
   decodePasteBytes,
+  type ClipboardSelection,
   type ClipboardService as CoreClipboardService,
   type RendererClipboardBoundary,
 } from "@opentui/core"
@@ -21,10 +22,10 @@ export function createTuiClipboard(renderer: RendererClipboardBoundary): OwnedCl
 
 export function createClipboardAdapter(clipboard: CoreClipboardService): OwnedClipboardService {
   return {
-    async read(): Promise<ClipboardContent | undefined> {
+    async read(selection: ClipboardSelection = "clipboard"): Promise<ClipboardContent | undefined> {
       const result = await clipboard.read({
-        preferredTypes: ["image/png", "text/plain"],
-        selection: "clipboard",
+        preferredTypes: selection === "primary" ? ["text/plain"] : ["image/png", "text/plain"],
+        selection,
       })
       if (result.status !== "read") {
         if (result.status === "failed") throw result.error

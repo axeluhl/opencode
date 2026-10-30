@@ -66,6 +66,26 @@ test("adapts OpenTUI image and text reads", async () => {
   expect(requests).toEqual([{ preferredTypes: ["image/png", "text/plain"], selection: "clipboard" }])
 })
 
+test("reads text from PRIMARY without changing standard clipboard paste", async () => {
+  const requests: ClipboardReadOptions[] = []
+  const clipboard = createClipboardAdapter(
+    coreClipboard({
+      read: {
+        status: "read",
+        representation: { mimeType: "text/plain", bytes: new TextEncoder().encode("selected text") },
+      },
+      onRead: (input) => requests.push(input),
+    }),
+  )
+
+  expect(await clipboard.read("primary")).toEqual({ data: "selected text", mime: "text/plain" })
+  expect(await clipboard.read()).toEqual({ data: "selected text", mime: "text/plain" })
+  expect(requests).toEqual([
+    { preferredTypes: ["text/plain"], selection: "primary" },
+    { preferredTypes: ["image/png", "text/plain"], selection: "clipboard" },
+  ])
+})
+
 test("uses all available routes but skips the process host remotely", async () => {
   const writes = { host: 0, terminal: 0 }
   const host: HostClipboardService = {
