@@ -25,11 +25,13 @@ Run `local/install.sh` again after changing anything in `local/` on this branch,
 ## Scripts in ~/.local/bin
 
 - `opencode` starts the local build's TUI (with `--standalone`); subcommands go to the official version.
-- `opencode-rebuild` takes over feature commits pushed from other machines, moves `local-build` to the installed
-  release, merges the feature branches and builds `packages/cli/dist-local`.
+- `opencode-rebuild` takes over feature commits pushed from other machines, recreates `local-build` from the installed
+  release with all feature branches merged when anything changed, and builds `packages/cli/dist-local`. Conflict
+  resolutions are recorded (git rerere), so a conflict resolved once is resolved automatically in later rebuilds.
 - `opencode-update` runs daily from a systemd user timer: official `opencode upgrade`, background service restart
   after an update, and `opencode-rebuild` when `local-build` is not on the installed release.
 
 ## Changing a feature
 
-Commit on the feature branch, push it to `fork`, then run `opencode-rebuild` (also on the other machines).
+Commit on the feature branch (amending or rebasing is fine), push it to `fork`, then run `opencode-rebuild` (also on
+the other machines).
