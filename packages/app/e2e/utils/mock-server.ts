@@ -1,5 +1,5 @@
 import type { Page } from "@playwright/test"
-import type { OpenCodeEvent, SessionMessageInfo } from "@opencode/client/promise"
+import type { OpenCodeEvent, ScheduleInfo, SessionMessageInfo } from "@opencode/client/promise"
 import { Permission } from "@opencode/schema/permission"
 import { Model } from "@opencode/schema/model"
 import { Worktree } from "@opencode/schema/worktree"
@@ -147,6 +147,8 @@ export interface MockServerConfig {
   generate?: (input: { sessionID: string; prompt: string }) => { text: string } | Promise<{ text: string }>
   onInboxChange?: (input: { sessionID: string; inboxID: string; action: "cancel" | "steer" | "queue" }) => void
   onBackground?: (input: { sessionID: string }) => void
+  // Serves `/api/experimental/schedule*`; defaults to an empty list.
+  schedules?: ScheduleInfo[]
   // Serves `/api/pty*` and mock PTY WebSockets. Created IDs are the first unused `${prefix}<n>` (prefix must start with "pty").
   // `directory` is the owning workspace (Location); `cwd` is the reported working directory (default: `directory`).
   pty?: { prefix?: string; initial?: { id: string; title: string; directory?: string; cwd?: string }[] }
@@ -1047,6 +1049,45 @@ function mockHandlers(
         websearchProviders: () => Effect.succeed({ location: location(config), data: [] }),
         // No scenario signs in to an OpenCode Console workspace, so none has usage limits.
         usageLimits: () => Effect.succeed({ location: location(config), data: null }),
+        scheduleList: (ctx) =>
+          Effect.sync(() => {
+            const list = config.schedules ?? []
+            const filtered = ctx.query.sessionID ? list.filter((item) => item.sessionID === ctx.query.sessionID) : list
+
+            return { data: filtered }
+          }),
+        schedulePause: (ctx) =>
+          Effect.suspend(() => {
+            const list = config.schedules ?? []
+            const index = list.findIndex((item) => item.id === ctx.params.scheduleID)
+
+            if (index === -1) return Effect.fail(new MockNotFound({ message: `Schedule not found: ${ctx.params.scheduleID}` }))
+            const updated: ScheduleInfo = { ...list[index]!, status: "paused", time: { ...list[index]!.time, updated: Date.now() } }
+            list[index] = updated
+
+            return Effect.succeed({ data: updated })
+          }),
+        scheduleResume: (ctx) =>
+          Effect.suspend(() => {
+            const list = config.schedules ?? []
+            const index = list.findIndex((item) => item.id === ctx.params.scheduleID)
+
+            if (index === -1) return Effect.fail(new MockNotFound({ message: `Schedule not found: ${ctx.params.scheduleID}` }))
+            const updated: ScheduleInfo = { ...list[index]!, status: "active", time: { ...list[index]!.time, updated: Date.now() } }
+            list[index] = updated
+
+            return Effect.succeed({ data: updated })
+          }),
+        scheduleDelete: (ctx) =>
+          Effect.suspend(() => {
+            const list = config.schedules ?? []
+            const index = list.findIndex((item) => item.id === ctx.params.scheduleID)
+
+            if (index === -1) return Effect.fail(new MockNotFound({ message: `Schedule not found: ${ctx.params.scheduleID}` }))
+            list.splice(index, 1)
+
+            return noContent
+          }),
         worktreeList: () =>
           Effect.sync(() => {
             if (config.worktrees) return resolve(config.worktrees)

@@ -205,6 +205,33 @@ const Group = HttpApiGroup.make("mock")
   .add(HttpApiEndpoint.get("websearchProviders", "/api/websearch/provider", { success: Json }))
   .add(HttpApiEndpoint.get("usageLimits", "/api/experimental/usage/limits", { success: Json }))
   .add(
+    HttpApiEndpoint.get("scheduleList", "/api/experimental/schedule", {
+      query: Schema.Struct({ sessionID: Schema.optional(Schema.String) }),
+      success: Json,
+    }),
+  )
+  .add(
+    HttpApiEndpoint.post("schedulePause", "/api/experimental/schedule/:scheduleID/pause", {
+      params: Schema.Struct({ scheduleID: Schema.String }),
+      success: Json,
+      error: [MockNotFound],
+    }),
+  )
+  .add(
+    HttpApiEndpoint.post("scheduleResume", "/api/experimental/schedule/:scheduleID/resume", {
+      params: Schema.Struct({ scheduleID: Schema.String }),
+      success: Json,
+      error: [MockNotFound],
+    }),
+  )
+  .add(
+    HttpApiEndpoint.delete("scheduleDelete", "/api/experimental/schedule/:scheduleID", {
+      params: Schema.Struct({ scheduleID: Schema.String }),
+      success: NoContent,
+      error: [MockNotFound],
+    }),
+  )
+  .add(
     HttpApiEndpoint.get("worktreeList", "/api/worktree", {
       query: Schema.Struct({ projectID: Schema.String }),
       success: Json,
