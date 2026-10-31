@@ -1,0 +1,14 @@
+#!/bin/sh
+# The interactive TUI runs the local build of the local-build branch in /usr/local/src/opencode, with its own
+# private server. Subcommands go to the official installation, which owns the shared background service.
+local_build=/usr/local/src/opencode/packages/cli/dist-local/cli-linux-x64/bin/opencode
+# Builds pick a database by branch name; share the official opencode.db so all sessions show up. The local build
+# cannot update itself; opencode-rebuild does that.
+run_local() {
+  OPENCODE_DISABLE_CHANNEL_DB=1 OPENCODE_DISABLE_AUTOUPDATE=1 exec "$local_build" --standalone "$@"
+}
+case "$1" in
+  "" | -*) run_local "$@" ;;
+esac
+[ -d "$1" ] && run_local "$@"
+exec "$HOME/.opencode/bin/opencode" "$@"
