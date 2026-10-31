@@ -1,9 +1,11 @@
 #!/bin/sh
 # Run daily by ~/.config/systemd/user/opencode-update.timer. Updates the official opencode in ~/.opencode/bin and
 # restarts the shared background service when its version changed. Rebuilds the local build whenever it is not based
-# on the installed release. Does nothing when everything is current.
+# on the installed release. Refreshes the local scripts even when the release is current.
 official="$HOME/.opencode/bin/opencode"
 repo=/usr/local/src/opencode
+setup=$(git -C "$repo" show local-setup:local/install-scripts.sh) || exit 1
+eval "$setup"
 notify() {
   echo "$1"
   notify-send --app-name=opencode "opencode update" "$1" 2>/dev/null || true
