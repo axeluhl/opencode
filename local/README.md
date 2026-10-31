@@ -107,6 +107,12 @@ Run `opencode-rebuild` to apply build changes to the executable. The version is 
 `OPENCODE_VERSION` only when launching an existing binary does not change it. To bootstrap an older installed script
 that does not refresh itself yet, run `sh local/bin/opencode-rebuild` from a clean `local-build` checkout once.
 
+### Native terminal mouse selection
+
+Run `opencode --no-mouse` to let the terminal handle drag selection and middle-click paste, including over SSH.
+The flag overrides the `mouse` setting in `~/.config/opencode/cli.json` for that invocation, including config reloads.
+Use `--mouse` to force capture on; omitting either flag uses the configured setting.
+
 ## Changing a feature
 
 Commit on the feature branch (amending or rebasing is fine), push it to `fork`, then run `opencode-rebuild` (also on
