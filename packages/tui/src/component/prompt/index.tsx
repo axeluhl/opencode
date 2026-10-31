@@ -1,5 +1,6 @@
 import {
   BoxRenderable,
+  MouseButton,
   RGBA,
   TextareaRenderable,
   MouseEvent,
@@ -1838,16 +1839,23 @@ export function Prompt(props: PromptProps) {
               onMouseDown={(r: MouseEvent) => {
                 if (disabled()) {
                   r.preventDefault()
-                  return
+                } else if (r.button === MouseButton.MIDDLE && process.platform === "linux" && config.mouse) {
+                  r.preventDefault()
+                  r.stopPropagation()
+                  void enqueuePaste(async (changed) => {
+                    const content = await clipboard.read("primary")
+                    if (content?.mime === "text/plain" && !changed()) await pasteInputText(content.data, changed)
+                  })
+                } else if (r.button === MouseButton.LEFT) {
+                  r.target?.focus()
+                  const extmark = input.extmarks
+                    .getAtOffset(input.cursorOffset)
+                    .find((item) => store.extmarkToPart.get(item.id)?.type === "pasted")
+                  if (extmark && expandPastedText(extmark.id)) {
+                    r.preventDefault()
+                    r.stopPropagation()
+                  }
                 }
-                if (r.button !== 0) return
-                r.target?.focus()
-                const extmark = input.extmarks
-                  .getAtOffset(input.cursorOffset)
-                  .find((item) => store.extmarkToPart.get(item.id)?.type === "pasted")
-                if (!extmark || !expandPastedText(extmark.id)) return
-                r.preventDefault()
-                r.stopPropagation()
               }}
               focusedBackgroundColor="transparent"
               cursorColor={disabled() ? theme.background.raised.base : theme.text.base}
