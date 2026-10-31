@@ -15,7 +15,8 @@ curl -fsSL https://raw.githubusercontent.com/axeluhl/opencode/local-setup/local/
 wget -qO- https://raw.githubusercontent.com/axeluhl/opencode/local-setup/local/install.sh | bash
 ```
 
-Run `local/install.sh` again after changing anything in `local/` on this branch, to install the new versions.
+`opencode-rebuild` and `opencode-update` refresh the scripts in `~/.local/bin` from `local-setup` automatically.
+Run `local/install.sh` again after changing the systemd units or other installation settings.
 
 ## Layout
 
@@ -37,6 +38,10 @@ Run `local/install.sh` again after changing anything in `local/` on this branch,
 - `opencode-update` runs daily from a systemd user timer: official `opencode upgrade`, background service restart
   after an update, and `opencode-rebuild` when `local-build` is not on the installed release.
 
+Both commands install all three scripts from the local `local-setup` branch before continuing, and re-execute
+themselves if their script changed. `opencode-rebuild` fetches `local-setup` first; `opencode-update` refreshes the
+scripts even when the official release is unchanged. Scripts retain the checkout path selected during installation.
+
 ### Build version
 
 The local binary embeds the release version with build metadata, for example `2.2.5+local.a73c5c6b56`, and keeps the
@@ -44,8 +49,9 @@ The local binary embeds the release version with build metadata, for example `2.
 without lowering its SemVer precedence below the release. Leaving the build version unset produces
 `0.0.0-local-build-...`, which fails providers' minimum-version checks even when the source is current.
 
-After updating the rebuild script, reinstall its copy in `~/.local/bin` and run `opencode-rebuild`. The version is
-compiled into the executable, so setting `OPENCODE_VERSION` only when launching an existing binary does not change it.
+Run `opencode-rebuild` to apply build changes to the executable. The version is compiled in, so setting
+`OPENCODE_VERSION` only when launching an existing binary does not change it. To bootstrap an older installed script
+that does not refresh itself yet, run `sh local/bin/opencode-rebuild` from a clean `local-build` checkout once.
 
 ## Changing a feature
 

@@ -7,7 +7,6 @@
 set -e
 repo=/usr/local/src/opencode
 export PATH="$HOME/.bun/bin:$PATH"
-target=${1:-$("$HOME/.opencode/bin/opencode" --version | sed 's/^opencode //')}
 cd "$repo"
 if [ "$(git branch --show-current)" != local-build ] || [ -n "$(git status --porcelain)" ]; then
   echo "Expected a clean checkout of local-build in $repo." >&2
@@ -25,6 +24,9 @@ fast_forward() {
   fi
 }
 fast_forward local-setup
+setup=$(git show local-setup:local/install-scripts.sh)
+eval "$setup"
+target=${1:-$("$HOME/.opencode/bin/opencode" --version | sed 's/^opencode //')}
 features=$(git show local-setup:local/features)
 for feature in $features; do
   [ "$feature" = local-setup ] || fast_forward "$feature"
