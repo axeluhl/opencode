@@ -38,6 +38,7 @@
   },
   "workspaces": {
     "packages": [
+      "local",
       "packages/*",
       "packages/plugins/*",
       "services/*",

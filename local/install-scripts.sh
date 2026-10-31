@@ -21,6 +21,20 @@ esac
 for script in opencode opencode-rebuild opencode-update; do
   mv -f "$scripts_dir/$script" "$bin/$script" || exit 1
 done
+# Keep the opt-in discovery plugin available to both official and local servers.
+# Stage beside the target so replacing a loaded plugin is atomic, even across filesystems.
+plugin_dir="${XDG_CONFIG_HOME:-$HOME/.config}/opencode/local-plugins/anthropic-discovery"
+mkdir -p "$plugin_dir" || exit 1
+plugin_file=$(mktemp "$plugin_dir/.index.XXXXXX") || exit 1
+if ! git -C "$repo" show local-setup:local/plugins/anthropic-discovery/index.ts >"$plugin_file"; then
+  rm -f "$plugin_file"
+  exit 1
+fi
+if cmp -s "$plugin_file" "$plugin_dir/index.ts"; then
+  rm -f "$plugin_file"
+else
+  mv -f "$plugin_file" "$plugin_dir/index.ts" || exit 1
+fi
 rm -rf "$scripts_dir"
 trap - 0
 if [ -n "$restart" ]; then

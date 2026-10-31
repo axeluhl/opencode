@@ -1,0 +1,15 @@
+{
+  "name": "opencode-local-setup",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "typecheck": "bun check --no-script",
+    "typecheck:tsc": "tsc --noEmit",
+    "test": "bun run --cwd ../packages/core script/test.ts ../../local/test/provider-discovery.test.ts"
+  },
+  "devDependencies": {
+    "@opencode/core": "workspace:*",
+    "@opencode/plugin": "workspace:*",
+    "effect": "catalog:"
+  }
+}

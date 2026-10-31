@@ -15,8 +15,62 @@ curl -fsSL https://raw.githubusercontent.com/axeluhl/opencode/local-setup/local/
 wget -qO- https://raw.githubusercontent.com/axeluhl/opencode/local-setup/local/install.sh | bash
 ```
 
-`opencode-rebuild` and `opencode-update` refresh the scripts in `~/.local/bin` from `local-setup` automatically.
+`opencode-rebuild` and `opencode-update` refresh the scripts in `~/.local/bin` and the local discovery plugin from
+`local-setup` automatically.
 Run `local/install.sh` again after changing the systemd units or other installation settings.
+
+## Discover models from an Anthropic-compatible proxy
+
+The local setup installs `local/plugins/anthropic-discovery/index.ts` into
+`~/.config/opencode/local-plugins/anthropic-discovery/index.ts` (respecting `XDG_CONFIG_HOME`). Enable it explicitly
+in your global `opencode.jsonc`:
+
+```jsonc
+{
+  "$schema": "https://opencode.ai/config.json",
+  "model": "claude-proxy/claude-opus-4-8",
+  "plugins": [
+    {
+      "package": "./local-plugins/anthropic-discovery",
+      "options": {
+        "refreshIntervalMs": 60000,
+        "providers": {
+          "claude-proxy": {
+            "name": "Local Proxy",
+            "baseURL": "http://localhost:6655/anthropic",
+            "authToken": "{file:secrets/anthropic-token}",
+          },
+        },
+      },
+    },
+  ],
+}
+```
+
+Merge the plugin entry with your existing plugins. Remove the old `providers.claude-proxy` definition: the plugin
+now supplies its connection and complete model inventory. Other provider configuration remains independent. The
+IDs advertised by the proxy become the OpenCode model IDs, so update defaults and reselect a model in existing
+sessions that used a different alias. The provider ID (`claude-proxy` here) is configurable; add more endpoints to
+the plugin's `providers` map when needed.
+
+The plugin requests `<baseURL>/v1/models` at startup and every minute by default, follows Anthropic's `after_id`
+pagination, and updates the picker when the inventory changes. Use a base URL without `/v1`. A failed or incomplete
+request keeps the last successful inventory and logs a warning; a successful empty inventory clears the list.
+Unloading or reconfiguring the plugin stops its refresh tasks and in-flight requests. At a cold start, an unreachable
+proxy has no models until discovery succeeds.
+
+`authToken` uses Bearer authentication. Alternatively, set `apiKey` to send `x-api-key`; additional `headers` are
+supported. Keep credentials in environment or file substitutions, never in the fork. The endpoint must implement
+Anthropic's model-list response (`data`, `display_name`, `has_more`, and `last_id`); this plugin is for the Anthropic
+Messages protocol, not an OpenAI `/models` endpoint.
+
+Known models inherit capabilities, limits, and reasoning variants from OpenCode's Anthropic catalog. Unknown models
+are still offered, with text/image/PDF input, tools enabled, and a conservative 200,000-token context and 32,000-token
+output limit. The proxy's `[1m]` model IDs keep that suffix when sent upstream and receive a 1,000,000-token context.
+Discovery does not infer the proxy's billing rates. Explicit per-model overrides may still be supplied in
+`providers.<id>.models` for metadata the endpoint does not advertise.
+
+For development, run `bun run test` and `bun typecheck` from `local`, then `bun run check` from the repository root.
 
 ## Layout
 
