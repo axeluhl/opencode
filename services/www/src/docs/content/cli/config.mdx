@@ -290,6 +290,8 @@ Configure terminal integration:
 
 In `manual` and `primary` modes, `Ctrl+C` and right-click copy a selection to the clipboard. Copy commands such as **Copy session ID** always use the clipboard, and `Ctrl+V` reads the clipboard. On local Linux sessions with mouse capture enabled, middle-clicking the prompt pastes text from the primary selection instead. Without mouse capture, the terminal handles middle-click paste. Remote sessions cannot read the terminal's primary selection through the host clipboard.
 
+In `primary` and `both` modes, selecting text in the prompt with the mouse leaves the cursor where it is, as a terminal selection would. Typing or pasting then acts at the cursor and drops the selection instead of replacing it. A single click still moves the cursor, after a short wait to tell it apart from a double click; pressing a key ends the wait early.
+
 Over SSH or on WSL, OpenCode sets the primary selection through the terminal. Terminals that ignore the selection type, such as Windows Terminal, put `primary` copies in the clipboard instead.
 
 ## Mini
