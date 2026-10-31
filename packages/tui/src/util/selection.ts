@@ -10,6 +10,7 @@ type Toast = {
 type FocusableSelectionTarget = {
   hasSelection: () => boolean
   getClipboardText?: (text: string) => string
+  hasPointerSelection?: () => boolean
 }
 
 type Renderer = {
@@ -111,7 +112,8 @@ export function handleSelectionKey(
     return
   }
 
-  if (editing) return
+  // A mouse selection that left the editor cursor in place is not edited; the key acts at the cursor instead.
+  if (editing && !focus?.hasPointerSelection?.()) return
 
   renderer.clearSelection()
 }

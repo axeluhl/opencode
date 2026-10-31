@@ -49,7 +49,7 @@ import { useConnected } from "../use-connected"
 import { useToast } from "../../ui/toast"
 import { createFadeIn } from "../../util/signal"
 import { DialogSkill } from "../dialog-skill"
-import { useConfig, useCursorStyle } from "../../config"
+import { Config, useConfig, useCursorStyle } from "../../config"
 import { usePromptMove } from "./move"
 import { promptFilesForServer, resolvePastedAttachments } from "./local-attachment"
 import { locationKey, useData } from "../../context/data"
@@ -72,6 +72,7 @@ import { useWorkingDirectoryActions } from "../../ui/working-directory-actions"
 import { truncateFilePath } from "../../ui/file-path"
 import { PromptMetadataRow } from "./metadata"
 import { limitLabel, useUsageLimits } from "../usage"
+import { createPointerSelection, type PointerSelection } from "./pointer-selection"
 
 export type PromptProps = {
   sessionID?: string
@@ -186,6 +187,7 @@ function argumentSlash(input: string, commands: readonly KeymapCommand[]) {
 
 export function Prompt(props: PromptProps) {
   let input: TextareaRenderable
+  let pointerSelection: PointerSelection | undefined
   let anchor: BoxRenderable
   const [inputTarget, setInputTarget] = createSignal<TextareaRenderable | undefined>()
 
@@ -209,6 +211,7 @@ export function Prompt(props: PromptProps) {
   const args = useArgs()
   const config = useConfig().data
   const cursorStyle = useCursorStyle()
+  const pointerSelectionEnabled = () => ["primary", "both"].includes(Config.copyMode(config))
   const dialog = useDialog()
   const toast = useToast()
   const status = createMemo(() => data.session.status(props.sessionID ?? ""))
@@ -374,6 +377,9 @@ export function Prompt(props: PromptProps) {
   let pasteQueue = Promise.resolve()
 
   function enqueuePaste(run: (changed: () => boolean) => Promise<void>) {
+    // A paste lands at the cursor; a mouse selection in the prompt only feeds the primary selection.
+    pointerSelection?.flush()
+    if (pointerSelection?.selected()) renderer.clearSelection()
     pasteQueue = pasteQueue
       .then(async () => {
         if (disposed || input.isDestroyed || disabled()) return
@@ -729,8 +735,12 @@ export function Prompt(props: PromptProps) {
     }
   })
 
+  // A key after a single click acts where the click placed the cursor, without waiting for a possible double click.
+  onCleanup(keymap.intercept("key", () => pointerSelection?.flush(), { priority: 102 }))
+
   onCleanup(() => {
     disposed = true
+    pointerSelection?.dispose()
     if (store.prompt.text) {
       saveDraft(stashSessionID, { prompt: unwrap(store.prompt), cursor: input.cursorOffset })
     }
@@ -1432,6 +1442,13 @@ export function Prompt(props: PromptProps) {
     )
   }
 
+  function expandPastedTextAtCursor() {
+    const extmark = input.extmarks
+      .getAtOffset(input.cursorOffset)
+      .find((item) => store.extmarkToPart.get(item.id)?.type === "pasted")
+    return !!extmark && expandPastedText(extmark.id)
+  }
+
   function expandPastedText(extmarkId: number) {
     const extmark = input.extmarks.get(extmarkId)
     const ref = store.extmarkToPart.get(extmarkId)
@@ -1822,8 +1839,14 @@ export function Prompt(props: PromptProps) {
               }}
               ref={(r: TextareaRenderable) => {
                 input = r
+                pointerSelection = createPointerSelection(r, {
+                  clock: renderer.clock,
+                  enabled: pointerSelectionEnabled,
+                  onClick: expandPastedTextAtCursor,
+                })
                 Object.assign(r, {
                   getClipboardText: (text: string) => expandPastedTextPlaceholders(text, store.prompt.pasted),
+                  hasPointerSelection: () => pointerSelection?.selected() ?? false,
                 })
                 setInputTarget(r)
                 if (promptPartTypeId === 0) {
@@ -1848,10 +1871,8 @@ export function Prompt(props: PromptProps) {
                   })
                 } else if (r.button === MouseButton.LEFT) {
                   r.target?.focus()
-                  const extmark = input.extmarks
-                    .getAtOffset(input.cursorOffset)
-                    .find((item) => store.extmarkToPart.get(item.id)?.type === "pasted")
-                  if (extmark && expandPastedText(extmark.id)) {
+                  // Pointer selections leave the cursor in place, so their click expands once it settles.
+                  if (!pointerSelectionEnabled() && expandPastedTextAtCursor()) {
                     r.preventDefault()
                     r.stopPropagation()
                   }
