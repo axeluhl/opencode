@@ -54,7 +54,8 @@ sessions that used a different alias. The provider ID (`claude-proxy` here) is c
 the plugin's `providers` map when needed.
 
 The plugin requests `<baseURL>/v1/models` at startup and every minute by default, follows Anthropic's `after_id`
-pagination, and updates the picker when the inventory changes. Use a base URL without `/v1`. A failed or incomplete
+pagination, and updates the picker when the inventory changes. Use a base URL without `/v1`; the plugin adds `/v1`
+for both discovery and Messages requests (`<baseURL>/v1/messages`). A failed or incomplete
 request keeps the last successful inventory and logs a warning; a successful empty inventory clears the list.
 Unloading or reconfiguring the plugin stops its refresh tasks and in-flight requests. At a cold start, an unreachable
 proxy has no models until discovery succeeds.
