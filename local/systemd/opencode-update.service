@@ -1,0 +1,7 @@
+[Unit]
+Description=Update the official opencode and rebuild the local build on its release
+
+[Service]
+Type=oneshot
+ExecStart=%h/.local/bin/opencode-update
+TimeoutStartSec=30min
