@@ -65,6 +65,12 @@ const Root = Spec.make(typeof OPENCODE_CLI_NAME === "string" ? OPENCODE_CLI_NAME
       Flag.optional,
     ),
     prompt: Flag.String("prompt").pipe(Flag.withDescription("Prompt to use"), Flag.optional),
+    mouse: Flag.Boolean("mouse").pipe(
+      Flag.withDescription(
+        "Capture the mouse for in-app selection and scrolling; use --no-mouse to release it to the terminal (e.g. over SSH for native selection and middle-click paste), overriding config",
+      ),
+      Flag.optional,
+    ),
   },
   commands: [
     Spec.make("upgrade", {
