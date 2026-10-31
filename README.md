@@ -43,7 +43,38 @@
 
 ---
 
-### Installation
+### Install this fork (local build)
+
+This is [axeluhl's fork](https://github.com/axeluhl/opencode), with local terminal features layered onto an official
+OpenCode release. The fork's default branch, `local-build`, includes the setup maintained on `local-setup`.
+
+On **Linux x86-64**, install Bash, Git, curl, and unzip, then run either command:
+
+```bash
+# curl
+curl -fsSL https://raw.githubusercontent.com/axeluhl/opencode/local-setup/local/install.sh | bash
+
+# wget (curl is still required by the installer)
+wget -qO- https://raw.githubusercontent.com/axeluhl/opencode/local-setup/local/install.sh | bash
+```
+
+The installer sets up the official OpenCode binary and the required Bun version, checks out the source, merges the
+feature branches, and compiles the local build. It installs launch/update scripts in `~/.local/bin`, updates your
+`~/.bashrc`, and enables a daily update timer when a systemd user session is available. Open a new Bash terminal afterward
+to use `opencode`.
+
+The default checkout is `/usr/local/src/opencode`, whose parent directory must be writable for the initial clone.
+To use a location under your home directory instead:
+
+```bash
+mkdir -p "$HOME/src"
+curl -fsSL https://raw.githubusercontent.com/axeluhl/opencode/local-setup/local/install.sh \
+  | OPENCODE_SRC="$HOME/src/opencode" bash
+```
+
+See [the local setup guide](local/README.md) for the branch layout, rebuilding, updates, and refreshing installed scripts.
+
+### Upstream installation
 
 ```bash
 # YOLO

@@ -5,8 +5,14 @@ they get merged upstream. It is not meant for a PR.
 
 ## Set up a machine
 
+See [the main README](../README.md#install-this-fork-local-build) for prerequisites and choosing a checkout directory.
+
 ```bash
+# curl
 curl -fsSL https://raw.githubusercontent.com/axeluhl/opencode/local-setup/local/install.sh | bash
+
+# wget (curl is still required by the installer)
+wget -qO- https://raw.githubusercontent.com/axeluhl/opencode/local-setup/local/install.sh | bash
 ```
 
 Run `local/install.sh` again after changing anything in `local/` on this branch, to install the new versions.
@@ -18,7 +24,7 @@ Run `local/install.sh` again after changing anything in `local/` on this branch,
   against `dev` and merge into a release without unreleased `dev` changes. `middle-click-paste` merges the original
   commits of PR #32370; `prompt-pointer-selection` builds on `middle-click-paste`.
 - `local-build` is the release tag of the installed official version with all feature branches merged in. It is
-  recreated on each release and never pushed.
+  recreated on each release. The fork publishes a snapshot of `local-build` as its default branch.
 - The official opencode stays in `~/.opencode/bin` and owns the shared background service. Both versions share
   `~/.local/share/opencode/opencode.db`.
 
