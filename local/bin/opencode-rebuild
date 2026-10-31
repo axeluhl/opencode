@@ -57,7 +57,9 @@ fi
 bun install
 cd packages/cli
 rm -rf dist-local.next dist-local.old
-bun run build --single --skip-install --skip-web-ui --outdir=dist-local.next
+# Keep the release's SemVer precedence for provider version checks, while identifying our local source revision.
+OPENCODE_VERSION="${target#v}+local.$(git rev-parse --short HEAD)" OPENCODE_CHANNEL=local-build \
+  bun run build --single --skip-install --skip-web-ui --outdir=dist-local.next
 [ -d dist-local ] && mv dist-local dist-local.old
 mv dist-local.next dist-local
 dist-local/cli-linux-x64/bin/opencode --version

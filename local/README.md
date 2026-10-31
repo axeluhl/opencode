@@ -31,6 +31,16 @@ Run `local/install.sh` again after changing anything in `local/` on this branch,
 - `opencode-update` runs daily from a systemd user timer: official `opencode upgrade`, background service restart
   after an update, and `opencode-rebuild` when `local-build` is not on the installed release.
 
+### Build version
+
+The local binary embeds the release version with build metadata, for example `2.2.5+local.a73c5c6b56`, and keeps the
+`local-build` channel. Providers receive this version in the User-Agent. The `+local` metadata identifies our build
+without lowering its SemVer precedence below the release. Leaving the build version unset produces
+`0.0.0-local-build-...`, which fails providers' minimum-version checks even when the source is current.
+
+After updating the rebuild script, reinstall its copy in `~/.local/bin` and run `opencode-rebuild`. The version is
+compiled into the executable, so setting `OPENCODE_VERSION` only when launching an existing binary does not change it.
+
 ## Changing a feature
 
 Commit on the feature branch (amending or rebasing is fine), push it to `fork`, then run `opencode-rebuild` (also on
