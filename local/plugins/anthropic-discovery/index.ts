@@ -47,7 +47,8 @@ export default Plugin.define({
                   activation: "enabled",
                   package: "@opencode/ai/providers/anthropic-compatible",
                   settings: {
-                    baseURL: endpoint.baseURL.replace(/\/+$/, ""),
+                    // The runtime appends /messages; use the same /v1 API root as discovery.
+                    baseURL: `${endpoint.baseURL.replace(/\/+$/, "")}/v1`,
                     ...(endpoint.authToken ? { authToken: endpoint.authToken } : {}),
                     ...(endpoint.apiKey ? { apiKey: endpoint.apiKey } : {}),
                   },

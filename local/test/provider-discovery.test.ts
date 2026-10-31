@@ -68,7 +68,7 @@ it.live("loads all pages over HTTP and preserves advertised IDs, names, and auth
     expect(yield* providers.get(providerID)).toMatchObject({
       name: "Local Proxy",
       package: "@opencode/ai/providers/anthropic-compatible",
-      settings: { baseURL: `${server.url.origin}/anthropic`, authToken: "test-token" },
+      settings: { baseURL: `${server.url.origin}/anthropic/v1`, authToken: "test-token" },
     })
     expect(requests).toEqual([
       { path: "/anthropic/v1/models", authorization: "Bearer test-token", version: "2023-06-01" },
@@ -113,7 +113,7 @@ it.effect("inherits catalog metadata without importing unadvertised models or up
     expect(model).toMatchObject({
       limit: { context: 200_000, input: 180_000, output: 64_000 },
       variants: [{ id: "high", settings: { thinking: { type: "enabled", budgetTokens: 16000 } } }],
-      settings: { baseURL: "http://proxy/anthropic", apiKey: "test-key" },
+      settings: { baseURL: "http://proxy/anthropic/v1", apiKey: "test-key" },
     })
     expect(model?.headers?.["x-upstream"]).toBeUndefined()
     expect(model?.body?.model).toBeUndefined()
