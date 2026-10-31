@@ -50,11 +50,8 @@ if [ "$("$HOME/.bun/bin/bun" --version 2>/dev/null)" != "$bun_version" ]; then
   curl -fsSL https://bun.sh/install | bash -s "bun-v$bun_version"
 fi
 # Scripts, taken from the local-setup branch and pointed at this checkout
-mkdir -p "$bin"
-for script in opencode opencode-rebuild opencode-update; do
-  git show "local-setup:local/bin/$script" | sed "s#/usr/local/src/opencode#$repo#g" >"$bin/$script"
-  chmod +x "$bin/$script"
-done
+setup=$(git show local-setup:local/install-scripts.sh)
+eval "$setup"
 # ~/.local/bin/opencode must come before the official ~/.opencode/bin/opencode, which stays reachable after it
 if ! grep -q "# opencode local build" "$HOME/.bashrc" 2>/dev/null; then
   sed -i '/^export PATH=.*\.opencode\/bin:\$PATH$/d' "$HOME/.bashrc" 2>/dev/null || true
