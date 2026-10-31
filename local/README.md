@@ -35,3 +35,35 @@ Run `local/install.sh` again after changing anything in `local/` on this branch,
 
 Commit on the feature branch (amending or rebasing is fine), push it to `fork`, then run `opencode-rebuild` (also on
 the other machines).
+
+### Updating the upstream base
+
+Use the `dev` source commit of the release, not the release tag itself. For example, for v2.2.4:
+
+```bash
+git fetch origin refs/tags/v2.2.4:refs/tags/v2.2.4
+git switch prompt-pointer-selection
+git merge 'v2.2.4^'
+```
+
+The release tag adds package version bumps, lockfile changes, and changelog entries. Upstream brings those changes
+back into `dev` through a separate squash commit, so successive release tags are not necessarily ancestors of one
+another. Merging a tag into a feature branch can therefore create dozens of release-metadata conflicts on the next
+upgrade. Only `local-build` should start from the tag. When choosing a newer `dev` source commit, the feature branch
+then requires a release containing that source commit.
+
+### Taking over a rewritten feature branch
+
+`opencode-rebuild` fetches the fork but only advances local feature branches when they can fast-forward. After an
+intentional rewrite has been pushed, synchronize each other machine explicitly. From a clean `local-build` checkout:
+
+```bash
+git fetch --no-tags fork +refs/heads/prompt-pointer-selection:refs/remotes/fork/prompt-pointer-selection
+git branch pointer-before-sync prompt-pointer-selection
+git branch -f prompt-pointer-selection fork/prompt-pointer-selection
+opencode-rebuild
+```
+
+The backup branch preserves any previous local commits for review. If a rebuild is currently stopped in a merge,
+save any manual conflict-resolution edits before using `git merge --abort` to return to a clean checkout. Git's
+rerere cache is local to each repository; pushing a branch does not transfer that cache to other machines.
